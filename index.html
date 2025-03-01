@@ -1,0 +1,108 @@
+import { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectItem } from "@/components/ui/select";
+import axios from "axios";
+
+export default function Home() {
+  const [workers, setWorkers] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    type: "worker",
+    skills: "",
+    needs: "",
+    location: "",
+  });
+
+  useEffect(() => {
+    fetchWorkersAndClients();
+  }, []);
+
+  const fetchWorkersAndClients = async () => {
+    try {
+      const workerRes = await axios.get("/api/workers");
+      const clientRes = await axios.get("/api/clients");
+      setWorkers(workerRes.data);
+      setClients(clientRes.data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (form.type === "worker") {
+        await axios.post("/api/workers", form);
+      } else {
+        await axios.post("/api/clients", form);
+      }
+      fetchWorkersAndClients();
+    } catch (error) {
+      console.error("Error submitting form:", error);
+    }
+  };
+
+  return (
+    <div className="container mx-auto p-6">
+      <h1 className="text-xl font-bold mb-4">家事管理員媒合系統</h1>
+      <form onSubmit={handleSubmit} className="mb-6 grid gap-4">
+        <Input
+          placeholder="姓名"
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+        />
+        <Input
+          placeholder="電話"
+          value={form.phone}
+          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+        />
+        <Input
+          placeholder="電子郵件"
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+        />
+        <Select
+          value={form.type}
+          onChange={(e) => setForm({ ...form, type: e })}
+        >
+          <SelectItem value="worker">家事管理員</SelectItem>
+          <SelectItem value="client">業主</SelectItem>
+        </Select>
+        <Input
+          placeholder="技能（適用於家事管理員）"
+          value={form.skills}
+          onChange={(e) => setForm({ ...form, skills: e.target.value })}
+        />
+        <Input
+          placeholder="需求（適用於業主）"
+          value={form.needs}
+          onChange={(e) => setForm({ ...form, needs: e.target.value })}
+        />
+        <Input
+          placeholder="地點"
+          value={form.location}
+          onChange={(e) => setForm({ ...form, location: e.target.value })}
+        />
+        <Button type="submit">提交</Button>
+      </form>
+      <h2 className="text-lg font-bold mb-2">可匹配的家事管理員</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {workers.map((worker) => (
+          <Card key={worker.id}>
+            <CardContent>
+              <h3 className="text-md font-semibold">{worker.name}</h3>
+              <p>📍 地點: {worker.location}</p>
+              <p>🛠 技能: {worker.skills}</p>
+              <p>📞 聯絡方式: {worker.phone}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
